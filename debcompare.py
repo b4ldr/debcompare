@@ -238,15 +238,13 @@ class Differ(object):
 
     def cli_report(self, color=True):
         '''print a nice report for cli interface'''
-        if color:
-            _red   = red
-            _green = green
-            _bold = bold
-        else:
-            for function in [_red, _green_, _bold]:
-                function = lambda string : string
+        _red   =  red if color else lambda string : string
+        _green = green if color else lambda string : string
+        _bold  = bold if color else lambda string : string
 
-        print(_bold('=' * 10, ' DebDiff Report ', '=' * 10))
+        # i use the join here so i can use the lambda trick above
+        # im sure there is a better way to do this so please send code
+        print(_bold(''.join(['=' * 10, ' DebDiff Report ', '=' * 10])))
         for line in differ.diff.decode().split('\n'):
             if len(line) == 0:
                 continue
@@ -257,7 +255,7 @@ class Differ(object):
             else:
                 print(line)
 
-        print(_bold('=' * 12, ' Bug Report ', '=' * 12))
+        print(_bold(''.join(['=' * 12, ' Bug Report ', '=' * 12])))
         if len(self.new_package.new_bugs) == 0:
             print(_bold('No bug reports, YAY :D'))
         for bug in self.bugs:
@@ -295,6 +293,8 @@ def get_args():
     parser.add_argument('-n', '--new-version',
             help='The new version of the package, the default is the old_version + 1' )
     parser.add_argument('-f', '--force', action='store_true',
+            help='force a re-download of all files')
+    parser.add_argument('--no-color', action='store_true',
             help='force a re-download of all files')
     parser.add_argument('-w', '--working-dir', default='/var/tmp/debcompare',
             help='A directory to store downloaded files')
@@ -369,5 +369,5 @@ if __name__ == "__main__":
     except MissingUrlException:
         raise SystemExit(102)
 
-    differ.cli_report()
+    differ.cli_report(not args.no_color)
 
