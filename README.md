@@ -6,8 +6,8 @@
 
 ## setup
 
-*debian*
-`apt-get install python3-fabulous python-debianbts devscripts
+## debian
+`apt-get install python3-fabulous python-debianbts devscripts`
 
-*none debian*
-`pip install python3-fabulous python-debian python-debianbts
+## none debian
+`pip install python3-fabulous python-debian python-debianbts`
