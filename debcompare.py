@@ -272,9 +272,10 @@ class Differ(object):
         print(_bold(''.join(['=' * 12, ' Bug Report ', '=' * 12])))
         if len(self.new_package.new_bugs) == 0:
             print(_bold('No bug reports, YAY :D'))
-        for bug in sorted(self.bugs, key = lambda x: x.bug_num):
-            print(' * {}: [{}] {}'.format(
-                _bold(bug.date), _bold(bug.bug_num), bug.subject))
+        else:
+            for bug in sorted(self.new_package.new_bugs, key = lambda x: x.bug_num):
+                print(' * {}: [{}] {}'.format(
+                    _bold(bug.date), _bold(bug.bug_num), bug.subject))
 
 
 def read_file(source):
