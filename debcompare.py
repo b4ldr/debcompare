@@ -16,17 +16,21 @@ from re import search
 
 SNAPSHOT_URL = 'http://snapshot.debian.org'
 
+
 class DownloadException(Exception):
     '''Unable to download a file from snapshot'''
     pass
+
 
 class MissingFileinfoException(Exception):
     '''Unable to find filename in snapshot fileinfo'''
     pass
 
+
 class MissingUrlException(Exception):
     '''Unable to determine snapshot download URL'''
     pass
+
 
 class Package(object):
     '''Hold information about a source package'''
@@ -260,7 +264,7 @@ class Differ(object):
         print(_bold(''.join(['=' * 12, ' Bug Report ', '=' * 12])))
         if len(self.new_package.new_bugs) == 0:
             print(_bold('No bug reports, YAY :D'))
-        for bug in self.bugs:
+        for bug in sorted(self.bugs, key = lambda x: x.bug_num):
             print(' * {}: [{}] {}'.format(
                 _bold(bug.date), _bold(bug.bug_num), bug.subject))
 
