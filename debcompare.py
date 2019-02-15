@@ -16,6 +16,7 @@ from re import search, sub
 SNAPSHOT_URL = 'http://snapshot.debian.org'
 
 
+
 class DownloadException(Exception):
     '''Unable to download a file from snapshot'''
     pass
@@ -73,7 +74,13 @@ class Package(object):
 
         self.dsc_url = self._get_url('dsc')
         self.debian_tar_url = self._get_url('debian.tar.xz')
-        self.orig_tar_url = self._get_url('orig.tar.gz', self.basename)
+        try:
+            self.orig_tar_url = self._get_url('orig.tar.gz', self.basename)
+        except MissingUrlException:
+            self.orig_tar_path = os.path.join(self.working_dir,
+                    '{}.orig.tar.xz'.format(self.basename))
+            self.orig_tar_url = self._get_url('orig.tar.xz', self.basename)
+
 
         if not os.path.isfile(self.dsc_path): 
             self._download_file(self.dsc_url, self.dsc_path)
