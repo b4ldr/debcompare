@@ -11,6 +11,7 @@ from datetime import datetime
 from subprocess import check_output, CalledProcessError
 from argparse import ArgumentParser
 from fabulous.color import red, green, bold
+from re import search
 
 
 SNAPSHOT_URL = 'http://snapshot.debian.org'
@@ -59,9 +60,9 @@ class Package(object):
             if os.path.isfile(self.dsc_path): 
                 os.remove(self.dsc_path)
             if os.path.isfile(self.debian_tar_path): 
-                os.remove(self.debian_tar_url)
+                os.remove(self.debian_tar_path)
             if os.path.isfile(self.orig_tar_path): 
-                os.remove(self.orig_tar_url)
+                os.remove(self.orig_tar_path)
             if os.path.isfile(self.fileinfo_path): 
                 os.remove(self.fileinfo_path)
 
@@ -202,6 +203,7 @@ class Differ(object):
     def bugs(self):
         '''get a list of all open bugs for this package'''
         if self._bugs is None:
+            # should we do archive=both here?
             self._bugs = bts.get_status(bts.get_bugs('package',self.name))
             pickle_tofile(self._bugs, self.bugs_path)
         return self._bugs
@@ -331,11 +333,13 @@ if __name__ == "__main__":
             logger.error('Unable to determine old version')
             raise SystemExit(1)
         elif len(_version) == 2:
-            deb_update = int(_version[1][-1])
+            match  = search('deb(\d+)u(\d+)$', _version[1])
+            deb_version = match.group(1)
+            deb_update = int(match.group(2))
             if deb_update == 1:
                 old_deb_version = _version[0]
             else:
-                old_deb_version = '{}{}'.format(_version[1][:-1], deb_update - 1)
+                old_deb_version = 'deb{}u{}'.format(deb_version, deb_update - 1)
             old_version = '{}+{}'.format(_version[0], old_deb_version)
         else:
             logger.error('unable to determine the next version as new version looks invalid')
@@ -348,7 +352,10 @@ if __name__ == "__main__":
                         args.package))
             raise SystemExit(1)
         elif len(_version) == 2:
-            new_deb_version = '{}{}'.format(_version[1][:-1], int(_version[1][-1]) + 1)
+            match  = search('deb(\d+)u(\d+)$', _version[1])
+            deb_version = match.group(1)
+            deb_update = int(match.group(2))
+            new_deb_version = 'deb{}u{}'.format(deb_version, deb_update + 1)
             new_version = '{}+{}'.format(_version[0], new_deb_version)
         else:
             logger.error('unable to determine the next version as base version look invalid')
