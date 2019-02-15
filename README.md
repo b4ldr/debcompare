@@ -11,3 +11,12 @@
 
 ## none debian
 `pip install python3-fabulous python-debian python-debianbts`
+
+## examples
+```
+$ ./debcompare.py -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f curl
+$ ./debcompare.py -o 7.38.0-4+deb8u13 -v -f curl
+$ ./debcompare.py -n 7.38.0-4+deb8u14 -v -f curl
+$ ./debcompare.py -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl 
+$ ./debcompare.py -vvvv -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl 
+```
