@@ -319,7 +319,7 @@ def get_args():
 def set_log_level(args_level):
     if args_level is None:
         log_level = logging.ERROR
-    if args_level == 1:
+    elif args_level == 1:
         log_level = logging.WARN
     elif args_level == 2:
         log_level = logging.INFO
