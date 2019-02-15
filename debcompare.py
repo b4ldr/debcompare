@@ -10,7 +10,6 @@ from debian.changelog import Changelog
 from datetime import datetime
 from subprocess import check_output, CalledProcessError
 from argparse import ArgumentParser
-from fabulous.color import red, green, bold
 from re import search, sub
 
 
@@ -244,6 +243,8 @@ class Differ(object):
 
     def cli_report(self, color=True):
         '''print a nice report for cli interface'''
+        if color:
+            from fabulous.color import red, green, bold
         _red   =  red if color else lambda string : string
         _green = green if color else lambda string : string
         _bold  = bold if color else lambda string : string

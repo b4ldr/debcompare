@@ -4,6 +4,8 @@
   - python3
   - debdiff
 
+if you dont want to install faboulus you can can run the program with `--no-color`
+
 ## setup
 
 ## debian
