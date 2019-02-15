@@ -289,11 +289,10 @@ def write_file(content, destination):
 
 def unpickle_file(source, force):
     if os.path.isfile(source):
-        if force:
-            os.remove(source)
-        else:
+        if not force:
             with open(source, 'rb') as f:
                 return pickle.load(f)
+        os.remove(source)
         return None
 
 def pickle_tofile(obj, destination):
