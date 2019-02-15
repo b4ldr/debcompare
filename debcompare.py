@@ -11,7 +11,7 @@ from datetime import datetime
 from subprocess import check_output, CalledProcessError
 from argparse import ArgumentParser
 from fabulous.color import red, green, bold
-from re import search
+from re import search, sub
 
 
 SNAPSHOT_URL = 'http://snapshot.debian.org'
@@ -254,6 +254,13 @@ class Differ(object):
         for line in differ.diff.decode().split('\n'):
             if len(line) == 0:
                 continue
+            if len(line.split()) > 1 and not line.split()[1].endswith('debian/patches/series'):
+                '''
+                this is a hack to try and make output more readable.
+                deb diff sort of double diffs so everything accept the series file
+                has surpurfulous +/-
+                '''
+                line = line[1:]
             if line[0] == '+':
                 print(_green(line))
             elif line[0] == '-':
