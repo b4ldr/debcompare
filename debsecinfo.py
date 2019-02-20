@@ -8,7 +8,7 @@ from argparse import ArgumentParser
 
 SECURITY_TRACKERDATA_URL = 'https://security-tracker.debian.org/tracker/data/json'
 
-class Packages(object):
+class PackagesCVE(object):
     '''
     Class to hold data parsed security tracker data from
     https://security-tracker.debian.org/tracker/data/json
@@ -51,7 +51,7 @@ class PackageCVE(object):
         self.description = info.get('description', 'Unknown')
 
     def __str__(self):
-        return '{} [{}]: {}'.format(self.cve, self.description, self.scope)
+        return '{}: [{}] {}'.format(self.cve, self.scope, self.description)
 
 
 
@@ -91,7 +91,7 @@ if __name__ == "__main__":
         with open(data_file, 'w') as f:
             data = get(SECURITY_TRACKERDATA_URL).json()
             json.dump(data, f)
-    packages = Packages(data_file)
+    packages = PackagesCVE(data_file)
     cves = packages.get_cves(args.package, args.check)
     for cve in cves:
         print(str(cve))

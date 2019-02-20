@@ -11,6 +11,7 @@ from datetime import datetime
 from subprocess import check_output, CalledProcessError
 from argparse import ArgumentParser
 from re import search, sub
+from debsecinfo import PackagesCVE, SECURITY_TRACKERDATA_URL
 
 
 SNAPSHOT_URL = 'http://snapshot.debian.org'
@@ -170,15 +171,16 @@ class Differ(object):
     _security_bugs = None
     _diff = None
 
-    def __init__(self, name, old_version, new_version, force=False,
+    def __init__(self, name, old_version, new_version, fixed_cves, force=False,
             working_dir='/var/tmp/debcompare', debdiff='/usr/bin/debdiff'):
-        self.name            = name
+        self.name        = name
         self.old_version = old_version
-        self.new_version     = new_version
-        self.force           = force
-        self.working_dir     = working_dir
-        self.debdiff         = debdiff
-        self.logger          = logging.getLogger('debcompare.Differ')
+        self.new_version = new_version
+        self.fixed_cves  = fixed_cves
+        self.force       = force
+        self.working_dir = working_dir
+        self.debdiff     = debdiff
+        self.logger      = logging.getLogger('debcompare.Differ')
         
         if not os.path.exists(self.working_dir):
             os.makedirs(self.working_dir)
@@ -284,6 +286,12 @@ class Differ(object):
                 print(' * {}: [{}] {}'.format(
                     _bold(bug.date), _bold(bug.bug_num), bug.subject))
 
+        print(_bold(''.join(['=' * 12, ' CVE Report ', '=' * 12])))
+        if len(self.fixed_cves) == 0:
+            print(_bold('No CVE\'s fixed in this update'))
+        else:
+            for cve in self.fixed_cves:
+                print(' * {}: [{}] {}'.format(_bold(cve.cve), cve.scope, cve.description))
 
 def read_file(source):
     if os.path.isfile(source):
@@ -342,6 +350,16 @@ if __name__ == "__main__":
 
     new_version = args.new_version
     old_version = args.old_version
+    cve_data_file = os.path.join(args.working_dir, 'cve.json')
+
+    if os.path.isfile(cve_data_file):
+        if args.force:
+            os.remove(cve_data_file)
+    if not os.path.isfile(cve_data_file):
+        with open(cve_data_file, 'w') as f:
+            data = get(SECURITY_TRACKERDATA_URL).json()
+            json.dump(data, f)
+
 
     if old_version is None and new_version is None:
         logger.error('You must specify old-version and/or new-version')
@@ -380,11 +398,15 @@ if __name__ == "__main__":
             logger.error('unable to determine the next version as base version look invalid')
             raise SystemExit(1)
 
+    packages_cve = PackagesCVE(cve_data_file)
+    fixed_cves   = packages_cve.get_cves(args.package, new_version)
+
     try:
         differ = Differ(
                 args.package,
                 old_version,
                 new_version,
+                fixed_cves,
                 args.force,
                 args.working_dir)
     except DownloadException:
