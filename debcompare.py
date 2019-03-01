@@ -8,6 +8,8 @@ import os
 import tarfile
 import pickle
 import json
+import gzip
+import lzma
 from datetime import datetime
 from subprocess import check_output, CalledProcessError
 from argparse import ArgumentParser
@@ -160,20 +162,53 @@ class Package():
         return self._fileinfo
 
     @property
+    def _changelog_from_diff(self):
+        '''
+        attempt to parse a diff file for the changelog
+        its not pretty but i think it mostly works
+        '''
+        _open = None
+        for additional_file in self.additional_files:
+            path = os.path.join(self.working_dir, additional_file)
+            if additional_file.endswith('diff.gz'):
+                _open = gzip.open
+                break
+            elif additional_file.endswith('diff.xz'):
+                _open = lzma.open
+                break
+            else:
+                continue
+        if _open is not None:
+            with _open(path, 'r') as diff_file:
+                changelog = False
+                content = ''
+                for line in diff_file.readlines():
+                    line = line.decode()
+                    if line.startswith('+++') and line.endswith('debian/changelog\n'):
+                        changelog = True
+                        continue
+                    if line.startswith('---') and changelog:
+                        changelog = False
+                        return Changelog(content)
+                    if changelog:
+                        if line[0] == '@':
+                            continue
+                        content += line[1:]
+
+    @property
     def debian_tar_path(self):
         '''try to get the debian tar file if it exists'''
         if self._debian_tar_path is None:
             for additional_file in self.additional_files:
-                print(additional_file)
                 if search(r'\.debian\.tar', additional_file):
                     self._debian_tar_path = os.path.join(self.working_dir, additional_file)
         return self._debian_tar_path
 
     @property
     def changelog(self):
-        '''parse the changelog of the package and return a Changlog object'''
+        '''parse the changelog of the package and return a Changelog object'''
         if not self.debian_tar_path:
-            return None
+            self._changelog = self._changelog_from_diff
         if self._changelog is None:
             print(self.debian_tar_path)
             tar = tarfile.open(self.debian_tar_path, 'r')
