@@ -48,6 +48,8 @@ class Package():
     _bugs = None
     _new_bugs = None
     _date = None
+    _additional_files = None
+    _debian_tar_path = None
 
     def __init__(self, name, version, bugs, force=False, working_dir='/var/tmp/debcompare'):
         self.name           = name
@@ -67,47 +69,29 @@ class Package():
             if os.path.isfile(self.fileinfo_path):
                 os.remove(self.fileinfo_path)
 
-        self.dsc_path  = os.path.join(
-            self.working_dir, '{}.dsc'.format(self.fullname))
-        debian_tar_extension = self._find_extention(
-            self.fullname,
-            ['debian.tar.xz', 'debian.tar.gz', 'diff.xz', 'diff.gz']
-        )
-        self.debian_tar_path = os.path.join(
-            self.working_dir, '{}.{}'.format(self.fullname, debian_tar_extension))
-        orig_tar_extension = self._find_extention(self.basename, ['orig.tar.xz', 'orig.tar.gz'])
-        self.orig_tar_path = os.path.join(
-            self.working_dir, '{}.{}'.format(self.basename, orig_tar_extension))
+        self.dsc_path  = os.path.join(self.working_dir, '{}.dsc'.format(self.fullname))
 
         if self.force:
             if os.path.isfile(self.dsc_path):
                 os.remove(self.dsc_path)
-            if os.path.isfile(self.debian_tar_path):
-                os.remove(self.debian_tar_path)
-            if os.path.isfile(self.orig_tar_path):
-                os.remove(self.orig_tar_path)
 
-        self.dsc_url = self._get_url('dsc')
-        self.debian_tar_url = self._get_url(debian_tar_extension)
-        self.orig_tar_url = self._get_url(orig_tar_extension, self.basename)
-
+        self.dsc_url = self._get_url('{}.dsc'.format(self.fullname))
         self._fileinfo = unpickle_file(self.fileinfo_path, self.force)
 
         if not os.path.isfile(self.dsc_path):
             self._download_file(self.dsc_url, self.dsc_path)
-        if not os.path.isfile(self.debian_tar_path):
-            self._download_file(self.debian_tar_url, self.debian_tar_path)
-        if not os.path.isfile(self.orig_tar_path):
-            self._download_file(self.orig_tar_url, self.orig_tar_path)
 
-    def _find_extention(self, basename, extensions):
-        for extension in extensions:
-            try:
-                self._get_url(extension, basename)
-                return extension
-            except MissingUrlException:
-                pass
-        raise ExtentionNotFoundException
+        if self.force:
+            for additional_file in self.additional_files:
+                path = os.path.join(self.working_dir, additional_file)
+                if os.path.isfile(path):
+                    os.remove(path)
+
+        for additional_file in self.additional_files:
+            path = os.path.join(self.working_dir, additional_file)
+            if not os.path.isfile(path):
+                url = self._get_url(additional_file)
+                self._download_file(url, path)
 
     def _download_file(self, source, destination):
         '''download a file from source and save it in destination'''
@@ -119,16 +103,35 @@ class Package():
         self.logger.info('Saving: %s', destination)
         write_file(response.content, destination)
 
-    def _get_url(self, extension, name=None):
+    def _get_url(self, name):
         '''parse the snapshot meta data to generate the correct download url'''
-        name = name if name else self.fullname
-        file_name = '{}.{}'.format(name, extension)
         for sha, file_info in self.fileinfo['fileinfo'].items():
-            if file_info[-1]['name'] == file_name:
+            if file_info[-1]['name'] == name:
                 url = '{}/file/{}'.format(SNAPSHOT_URL, sha)
                 return url
-        self.logger.error('unable to find url for %s', file_name)
+        self.logger.error('unable to find url for %s', name)
         raise MissingUrlException
+
+    @property
+    def additional_files(self):
+        '''list of bugs that have been raised since this package was created'''
+        if self._additional_files is None:
+            self._additional_files = []
+            with open(self.dsc_path, 'r') as dsc_file:
+                files_section = False
+                for line in dsc_file.readlines():
+                    if line.strip('\n') == 'Files:':
+                        files_section = True
+                        continue
+                    if files_section:
+                        words = line.split()
+                        if len(words) == 3:
+                            self.logger.debug('add file: %s', words[2])
+                            self._additional_files.append(words[2])
+                        else:
+                            files_section = False
+                            break
+        return self._additional_files
 
     @property
     def new_bugs(self):
@@ -157,13 +160,23 @@ class Package():
         return self._fileinfo
 
     @property
+    def debian_tar_path(self):
+        '''try to get the debian tar file if it exists'''
+        if self._debian_tar_path is None:
+            for additional_file in self.additional_files:
+                print(additional_file)
+                if search(r'\.debian\.tar', additional_file):
+                    self._debian_tar_path = os.path.join(self.working_dir, additional_file)
+        return self._debian_tar_path
+
+    @property
     def changelog(self):
         '''parse the changelog of the package and return a Changlog object'''
+        if not self.debian_tar_path:
+            return None
         if self._changelog is None:
-            try:
-                tar = tarfile.open(self.debian_tar_path, 'r')
-            except tarfile.ReadError:
-                self.logger.error('unable to untar: %s', 
+            print(self.debian_tar_path)
+            tar = tarfile.open(self.debian_tar_path, 'r')
             for member in tar.getmembers():
                 if member.name == 'debian/changelog':
                     changelog = tar.extractfile(member)
@@ -285,17 +298,21 @@ class Differ():
         _green = green if color else lambda string: string
         _bold  = bold if color else lambda string: string
 
+        diff_hack = False
         # i use the join here so i can use the lambda trick above
         # im sure there is a better way to do this so please send code
         print(_bold(''.join(['=' * 10, ' DebDiff Report ', '=' * 10])))
         for line in self.diff.decode().split('\n'):
             if not line:
                 continue
-            if len(line.split()) > 1 and not line.split()[1].endswith('debian/patches/series'):
+            if line[:4] in ['+---', '----', '-+++', '++++']:
+                diff_hack = True
+            if line[0] != '+' and line[0] != '-':
+                diff_hack = False
+            if diff_hack:
                 '''
                 this is a hack to try and make output more readable.
-                deb diff sort of double diffs so everything accept the series file
-                has surpurfulous +/-
+                deb diff sort of double diffs sometimes
                 '''
                 line = line[1:]
             if line[0] == '+':
