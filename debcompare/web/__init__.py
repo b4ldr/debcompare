@@ -2,6 +2,7 @@
 import os
 from flask import Flask
 import logging
+from flask_bootstrap import Bootstrap
 from debcompare.web import tasks, compare
 from debcompare.compare import PackagesCVE
 
@@ -9,6 +10,7 @@ from debcompare.compare import PackagesCVE
 def create_app(test_config=None):
     '''main web app'''
     app = Flask(__name__, instance_relative_config=True)
+    Bootstrap(app)
     app.cli.add_command(tasks.click_update_cves)
     app.logger.setLevel(logging.DEBUG)
 
