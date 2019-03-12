@@ -154,8 +154,9 @@ class Package():
             self.logger.info('Fetching: %s', url)
             response = get(url)
             if response.status_code != 200:
-                self.logger.error('unable to get snapshot fileinfo for %s', self.fullname)
-                raise MissingFileinfoException
+                msg = 'unable to get snapshot fileinfo for {}'.format(self.fullname)
+                self.logger.error(msg)
+                raise MissingFileinfoException(msg)
             self._fileinfo = response.json()
             self.logger.debug(self._fileinfo)
             pickle_tofile(self._fileinfo, self.fileinfo_path)

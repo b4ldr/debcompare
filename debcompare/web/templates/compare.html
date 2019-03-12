@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <title>{{differ.name}}: {{differ.old_version}} - {{differ.new_version}}</title>
+  </head>
+  <body>
+    <pre>
+      <h1>bug report</h1>
+       {% if differ.new_package.new_bugs %}
+         {% for bug in differ.new_package.new_bugs %}
+        {{bug.date}}: <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug={{bug.bug_num}}">[{{bug.bug_num}}</a> {{ bug.subject }}<br />
+         {% endfor %}
+       {% endif %}
+    </pre>
+    <pre>
+      <h1>CVE report</h1>
+       {% if differ.fixed_cves %}
+        <table>
+          <thead>
+            <th>CVE</th>
+            <th>scope</th>
+            <th>description</th>
+          </thead>
+          <tbody>
+         {% for cve in differ.fixed_cves %}
+          <tr>
+            <td>
+              <a href="https://security-tracker.debian.org/tracker/{{cve.cve}}">{{cve.cve}}</a>
+            </td>
+            <td>{{cve.scope}}</td>
+            <td>{{cve.description}}</td>
+          </tr>
+         {% endfor %}
+         </tbody>
+        </table>
+       {% endif %}
+    </pre>
+    <pre>
+      <h1>Diff report</h1>
+      {{differ.diff.decode()}}
+    </pre>
+  </body>
+</html>
+

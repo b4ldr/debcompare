@@ -1,13 +1,16 @@
 '''main web app'''
 import os
 from flask import Flask
-from debcompare.web import tasks
+import logging
+from debcompare.web import tasks, compare
+from debcompare.compare import PackagesCVE
 
 
 def create_app(test_config=None):
     '''main web app'''
     app = Flask(__name__, instance_relative_config=True)
-    app.cli.add_command(tasks.update_packages_cve)
+    app.cli.add_command(tasks.click_update_cves)
+    app.logger.setLevel(logging.DEBUG)
 
     if test_config is None:
         app.config.from_object('debcompare.web.config')
@@ -19,9 +22,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'Hello, World!'
+    app.register_blueprint(compare.bp)
+    tasks.update_cves_file(app.config['PACKAGES_CVE_FILE'])
+    app.packages_cve = PackagesCVE(app.config['PACKAGES_CVE_FILE'])
 
     return app
