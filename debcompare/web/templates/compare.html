@@ -7,9 +7,27 @@
     <pre>
       <h1>bug report</h1>
        {% if differ.new_package.new_bugs %}
-         {% for bug in differ.new_package.new_bugs %}
-        {{bug.date}}: <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug={{bug.bug_num}}">[{{bug.bug_num}}</a> {{ bug.subject }}<br />
+        <table>
+          <thead>
+            <th>Date</th>
+            <th>Bug</th>
+            <th>Subject</th>
+          </thead>
+        </table>
+        <tbody>
+        {% for bug in differ.new_package.new_bugs %}
+          <tr>
+            <td>{{bug.date}}</td>
+            <td>
+              <a href="https://bugs.debian.org/cgi-bin/bugreport.cgi?bug={{bug.bug_num}}">
+                {{bug.bug_num}}
+              </a>
+            </td>
+            <td>{{ bug.subject }}</td>
+          </tr>
          {% endfor %}
+        </tbody>
+      </table>
        {% endif %}
     </pre>
     <pre>
