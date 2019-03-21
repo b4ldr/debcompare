@@ -126,13 +126,13 @@ class Package():
                         files_section = True
                         continue
                     if files_section:
+                        if not line or line[0] != ' ':
+                            files_section = False
+                            break
                         words = line.split()
                         if len(words) == 3:
                             self.logger.debug('add file: %s', words[2])
                             self._additional_files.append(words[2])
-                        else:
-                            files_section = False
-                            break
         return self._additional_files
 
     @property
@@ -338,7 +338,7 @@ class Differ():
 
         diff_hack = False
         # i use the join here so i can use the lambda trick above
-        # im sure there is a better way to do this so please send code
+        #  im sure there is a better way to do this so please send code
         print(_bold(''.join(['=' * 10, ' DebDiff Report ', '=' * 10])))
         if phab:
             print('```')
@@ -496,10 +496,11 @@ def main():
         deb_version = match.group(2)
         deb_update = int(match.group(3))
         if deb_update == 1:
-            old_deb_version = base_version
+            old_version = base_version
         else:
             old_deb_version = 'deb{}u{}'.format(deb_version, deb_update - 1)
             old_version = '{}+{}'.format(base_version, old_deb_version)
+        logger.debug('old_version determined: %s', old_version)
     elif new_version is None:
         match  = search(r'(.*?)\+deb(\d+)u(\d+)$', old_version)
         if match is None:
@@ -510,6 +511,7 @@ def main():
         base_version = match.group(1)
         new_deb_version = 'deb{}u{}'.format(deb_version, deb_update + 1)
         new_version = '{}+{}'.format(base_version, new_deb_version)
+        logger.debug('new_version determined: %s', new_version)
 
     packages_cve = PackagesCVE(cve_data_file)
     fixed_cves   = packages_cve.get_cves(args.package, new_version)
