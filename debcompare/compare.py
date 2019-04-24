@@ -488,29 +488,31 @@ def main():
         logger.error('You must specify old-version and/or new-version')
         SystemExit(1)
     elif old_version is None:
-        match  = search(r'(.*?)\+deb(\d+)u(\d+)$', new_version)
+        match  = search(r'(.*?)([+-~])deb(\d+)u(\d+)$', new_version)
         if match is None:
             logger.error('unable to determine the next version as new version looks invalid')
             raise SystemExit(1)
         base_version = match.group(1)
-        deb_version = match.group(2)
-        deb_update = int(match.group(3))
+        modifier = match.group(2)
+        deb_version = match.group(3)
+        deb_update = int(match.group(4))
         if deb_update == 1:
             old_version = base_version
         else:
             old_deb_version = 'deb{}u{}'.format(deb_version, deb_update - 1)
-            old_version = '{}+{}'.format(base_version, old_deb_version)
+            old_version = '{}{}{}'.format(base_version, modifier, old_deb_version)
         logger.debug('old_version determined: %s', old_version)
     elif new_version is None:
-        match  = search(r'(.*?)\+deb(\d+)u(\d+)$', old_version)
+        match  = search(r'(.*?)([+-~])deb(\d+)u(\d+)$', old_version)
         if match is None:
             logger.error('unable to determine the next version as base version look invalid')
             raise SystemExit(1)
-        deb_version = match.group(1)
-        deb_update = int(match.group(2))
         base_version = match.group(1)
+        modifier = match.group(2)
+        deb_version = match.group(3)
+        deb_update = int(match.group(4))
         new_deb_version = 'deb{}u{}'.format(deb_version, deb_update + 1)
-        new_version = '{}+{}'.format(base_version, new_deb_version)
+        new_version = '{}{}{}'.format(base_version, modifier, new_deb_version)
         logger.debug('new_version determined: %s', new_version)
 
     packages_cve = PackagesCVE(cve_data_file)
