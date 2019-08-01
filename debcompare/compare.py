@@ -3,20 +3,23 @@
 python module to compare two debian packages from a security prespective
 '''
 # we use python3 as xz is not supported in python2 tarfile
-import logging
-import os
-import tarfile
-import pickle
-import json
 import gzip
+import json
+import logging
 import lzma
-from datetime import datetime
-from subprocess import check_output, CalledProcessError
+import os
+import pickle
+import tarfile
 from argparse import ArgumentParser
+from datetime import datetime
 from re import search
-from requests import get
+from subprocess import CalledProcessError, check_output
+
 import debianbts as bts
+
 from debian.changelog import Changelog
+from requests import get
+
 from debcompare.secinfo import PackagesCVE, SECURITY_TRACKERDATA_URL
 
 
@@ -314,7 +317,7 @@ class Differ():
             cmd = [self.debdiff, self.base_package.dsc_path, self.new_package.dsc_path]
             try:
                 # debdiff exits 0 if there are no changes
-                check_output(cmd)
+                check_output(cmd, env=dict(os.environ, TMPDIR=self.working_dir))
                 self.logger.warning('No difference found')
             except CalledProcessError as error:
                 # debdiff exits 1 if there are changes
@@ -386,9 +389,11 @@ class Differ():
                 if phab:
                     print('* [[https://security-tracker.debian.org/tracker/{0} | {0}]]: '
                           ' [{1}] {2}'.format(cve.cve, cve.scope, cve.description))
+                    for note in cve.notes:
+                        print('** [[{0} | {0}]]'.format(note))
                 else:
-                    print(' * {}: [{}] {}'.format(
-                        _bold(cve.cve), cve.scope, cve.description))
+                    print(' * {}: [{}] {}{}'.format(
+                        _bold(cve.cve), cve.scope, cve.description, '\n\t\t - '.join(cve.notes)))
 
 
 def read_file(source):
