@@ -342,7 +342,10 @@ class Differ():
         diff_hack = False
         # i use the join here so i can use the lambda trick above
         #  im sure there is a better way to do this so please send code
-        print(_bold(''.join(['=' * 10, ' DebDiff Report ', '=' * 10])))
+        print(_bold(''.join(
+            ['=' * 10,
+             ' DebDiff Report {}: {} -> {} '.format(self.name, self.old_version, self.new_version),
+             '=' * 10])))
         if phab:
             print('```')
         for line in self.diff.decode().split('\n'):
