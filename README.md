@@ -8,17 +8,19 @@ if you dont want to install faboulus you can can run the program with `--no-colo
 
 ## setup
 
+`mkdir -p /var/tmp/debcompare/`
+
 ## debian
 `apt-get install python3-fabulous python-debianbts devscripts`
 
 ## none debian
-`pip install python3-fabulous python-debian python-debianbts`
+`pip install fabulous python-debian python-debianbts bs4`
 
 ## examples
 ```
-$ ./debcompare.py -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f curl
-$ ./debcompare.py -o 7.38.0-4+deb8u13 -v -f curl
-$ ./debcompare.py -n 7.38.0-4+deb8u14 -v -f curl
-$ ./debcompare.py -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl 
-$ ./debcompare.py -vvvv -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl 
+$ python3 -m debcompare.compare -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f curl
+$ python3 -m debcompare.compare -o 7.38.0-4+deb8u13 -v -f curl
+$ python3 -m debcompare.compare -n 7.38.0-4+deb8u14 -v -f curl
+$ python3 -m debcompare.compare -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl
+$ python3 -m debcompare.compare -vvvv -o 7.38.0-4+deb8u1  -n 7.38.0-4+deb8u11 -v -f --no-color curl
 ```
