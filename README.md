@@ -11,7 +11,7 @@ if you dont want to install faboulus you can can run the program with `--no-colo
 `mkdir -p /var/tmp/debcompare/`
 
 ## debian
-`apt-get install python3-fabulous python-debianbts devscripts`
+`apt-get install python3-fabulous python3-debianbts python3-bs4 devscripts`
 
 ## none debian
 `pip install fabulous python-debian python-debianbts bs4`
